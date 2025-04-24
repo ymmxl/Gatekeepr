@@ -1,0 +1,608 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %} GET OTP {% endblock title %}
+
+<!-- Specific CSS goes HERE -->
+{% block stylesheets %}
+<style>
+  /* Make sure the fixed-plugin button is visible */
+  .fixed-plugin .fixed-plugin-button {
+    z-index: 1031;
+    display: block !important;
+    visibility: visible !important;
+    position: fixed !important;
+    bottom: 30px !important;
+    right: 30px !important;
+    background: #fff !important;
+    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.16) !important;
+    border-radius: 50% !important;
+    font-size: 1.25rem !important;
+    cursor: pointer !important;
+  }
+  
+  .fixed-plugin .fixed-plugin-button i {
+    pointer-events: none;
+  }
+  
+  .otp-card {
+    margin-bottom: 8px;
+    padding: 8px 15px;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  }
+  
+  /* .saved-otp {
+    background-color: #f0f8ff;
+  } */
+  
+  .otp-card .row {
+    margin: 0;
+    align-items: center;
+  }
+  
+  .otp-card .col-md-1,
+  .otp-card .col-md-2,
+  .otp-card .col-md-3,
+  .otp-card .col-md-4,
+  .otp-card .col-md-7 {
+    padding: 0 8px;
+  }
+  
+  .otp-value, .countdown, .friendly-name, .secret {
+    font-size: 0.9rem;
+    line-height: 1.4;
+  }
+  
+  /* Hover and copy styles */
+  .otp-value, .secret {
+    cursor: pointer;
+    position: relative;
+    transition: background-color 0.2s ease;
+    border-radius: 3px;
+    padding: 2px 4px;
+  }
+  
+  .otp-value:hover, .secret:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    box-shadow: 0 0 3px rgba(0, 0, 0, 0.1);
+  }
+  
+  .otp-value:hover::after, .secret:hover::after {
+    content: "Click to copy";
+    position: absolute;
+    background: rgba(0, 0, 0, 0.7);
+    color: #fff;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    top: -25px;
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    z-index: 10;
+  }
+  
+  /* Class to disable hover tooltip when copying */
+  .copying:hover::after {
+    display: none;
+  }
+  
+  /* save/delete button styles */
+  .save-otp, .delete-saved-otp {
+    margin: 0;
+    padding: 4px 12px;
+    font-size: 0.8rem;
+    width: 80%;
+    min-width: 50px;
+  }
+  
+  /* Icon styling for save and delete buttons */
+  .save-otp i, .delete-saved-otp i {
+    margin: auto;
+    font-size: 2rem; /* Larger icon size */
+    vertical-align: middle; /* Better vertical alignment */
+  }
+  
+  /* Modal styles */
+  .modal {
+    display: none;
+    position: fixed;
+    z-index: 1050;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.4);
+  }
+  
+  .modal-content {
+    background-color: #fefefe;
+    margin: 15% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+    max-width: 500px;
+    border-radius: 5px;
+  }
+  
+  .close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  
+  .close:hover,
+  .close:focus {
+    color: black;
+    text-decoration: none;
+  }
+  
+  .column-labels {
+    display: flex;
+    padding: 8px 15px;
+    border-radius: 5px;
+    margin-bottom: 8px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    background-color: rgb(98, 107, 134);
+  }
+  
+  .column-labels .col-md-2,
+  .column-labels .col-md-3,
+  .column-labels .col-md-4,
+  .column-labels .col-md-7 {
+    padding: 0 8px;
+  }
+</style>
+{% endblock stylesheets %}
+{% block content %}
+<div class="container-fluid py-4">
+  <div class="row">
+    <div class="col-12">
+        <div class="card mb-4">
+          <div class="card-header pb-0">
+            <h6>On Demand 2FA Tool</h6>
+          </div>
+          <div class="card-body px-4 pt-0 pb-4">
+            <form accept-charset="utf-8" action="/otp/get-otp" id="get_otp" method="POST">
+              <label for="form_secret">AKA Web Version of Google Authenticator</label>
+              <textarea id="form_secret" name="form_secret" class="form_control col-12" rows=6 placeholder="Enter 2FA Secret, separated by \n">{% if current_user.username == 'test' %}QDWSM3OYBPGTEVSPB5FKVDM3CSNCWHVK
+otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Example
+user123|password123|HXDMVJECJJWSRB3HWIZR4IFUGFTMXBOZ|user@example.com
+HXDM-VJEC-JJWS-RB3H{% endif %}</textarea>
+              <div class="mt-2">
+                <p><strong>Supported formats:</strong></p>
+                <ul class="mb-2">
+                  <li>Google Authenticator secrets (with spaces every 4 characters)</li>
+                  <li>Authy secrets (with hyphens)</li>
+                  <li>otpauth:// URLs</li>
+                  <li>Full format: UID|PASSWORD|SECRET|EMAIL</li>
+                </ul>
+                <p class="small text-muted">Spaces, hyphens, and other formatting will be automatically handled.</p>
+              </div>
+           </div>  
+           <div class="margin-auto px-4">
+          <button type="submit" class="btn btn-primary btn-tone mt-3" >RECEIVE OTP</button>
+           </div>
+          </form>
+        </div>
+    </div>
+  </div>
+  <div id="saved-otps-container" class="row mb-4" style="display:none;">
+    <div class="col-12">
+      <div class="card mb-4">
+        <div class="card-header pb-0">
+          <h6>Saved OTPs</h6>
+        </div>
+        <div class="card-body px-4 pt-0 pb-4">
+          <div class="column-labels">
+            <div class="col-md-2">OTP</div>
+            <div class="col-md-2">Time Left</div>
+            <div class="col-md-3">Name</div>
+            <div class="col-md-4">Secret</div>
+            <div class="col-md-1"></div>
+          </div>
+          <div id="saved-otp-list">
+            <!-- Saved OTP items will be loaded here -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-12 toggle-otp-list">
+      <div class="card mb-4">
+        <div class="card-header">
+          <h6>Message from 2FA</h6>
+        </div>
+        <div class="card-body pax-4 pt-0 pb-4">
+          <div class="column-labels">
+            <div class="col-md-2">OTP</div>
+            <div class="col-md-2">Time Left</div>
+            <div class="col-md-7">Secret</div>
+            <div class="col-md-1"></div>
+          </div>
+          <div id="otp-container">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Save OTP Modal -->
+<div id="saveOtpModal" class="modal">
+  <div class="modal-content">
+    <span class="close">&times;</span>
+    <h5>Save OTP Secret</h5>
+    <form id="saveOtpForm">
+      <input type="hidden" id="secretToSave" name="secret">
+      <div class="form-group mb-3">
+        <label for="friendlyName">Enter a friendly name for this OTP:</label>
+        <input type="text" class="form-control" id="friendlyName" name="friendlyName" required>
+      </div>
+      <button type="submit" class="btn btn-primary">Save</button>
+    </form>
+  </div>
+</div>
+
+{% endblock content %}
+
+<!-- Specific JS goes HERE --> 
+{% block javascripts %}
+<script>
+// Make sure the fixed-plugin button is properly initialized
+document.addEventListener('DOMContentLoaded', function() {
+  // Ensure the fixed-plugin button is visible
+  const fixedPluginButton = document.querySelector('.fixed-plugin-button');
+  if (fixedPluginButton) {
+    fixedPluginButton.style.display = 'block';
+    fixedPluginButton.style.visibility = 'visible';
+    
+    // Animate it briefly to draw attention
+    fixedPluginButton.classList.add('animate__animated', 'animate__pulse');
+    setTimeout(function() {
+      fixedPluginButton.classList.remove('animate__animated', 'animate__pulse');
+    }, 2000);
+  }
+  
+  // Custom configurator button as backup
+  const customConfigButton = document.getElementById('customConfigButton');
+  const fixedPlugin = document.querySelector('.fixed-plugin');
+  
+  if (customConfigButton && fixedPlugin) {
+    customConfigButton.addEventListener('click', function() {
+      if (!fixedPlugin.classList.contains('show')) {
+        fixedPlugin.classList.add('show');
+      } else {
+        fixedPlugin.classList.remove('show');
+      }
+    });
+  }
+  
+  // Load saved OTPs on page load
+  loadSavedOtps();
+  
+  // Add clipboard functionality to all OTP cards
+  addCopyToClipboardListeners();
+});
+
+// Function to add copy to clipboard listeners
+function addCopyToClipboardListeners() {
+  // Add click event to both normal and saved OTPs
+  document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('otp-value') || e.target.classList.contains('secret')) {
+      const textToCopy = e.target.textContent;
+      copyToClipboard(textToCopy, e.target);
+    }
+  });
+}
+// also got help from claude!
+// Function to copy text to clipboard
+function copyToClipboard(text, element) {
+  // Add copying class to disable hover tooltip
+  element.classList.add('copying');
+  
+  navigator.clipboard.writeText(text).then(() => {
+    // Create and show temporary success message
+    const feedback = document.createElement('span');
+    feedback.textContent = 'Copied!';
+    feedback.style.position = 'absolute';
+    feedback.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+    feedback.style.color = '#fff';
+    feedback.style.padding = '2px 8px';
+    feedback.style.borderRadius = '4px';
+    feedback.style.fontSize = '0.8rem';
+    feedback.style.top = '-25px';
+    feedback.style.left = '50%';
+    feedback.style.transform = 'translateX(-50%)';
+    feedback.style.zIndex = '20'; // Higher z-index to ensure visibility
+    feedback.style.whiteSpace = 'nowrap';
+    
+    element.style.position = 'relative';
+    element.appendChild(feedback);
+    
+    // Remove feedback after 800ms
+    setTimeout(() => {
+      if (element.contains(feedback)) {
+        element.removeChild(feedback);
+      }
+      // Remove copying class after the tooltip is gone
+      setTimeout(() => {
+        element.classList.remove('copying');
+      }, 100);
+    }, 800);
+  }).catch(err => {
+    console.error('Failed to copy text: ', err);
+    
+    // Show error feedback
+    const feedback = document.createElement('span');
+    feedback.textContent = 'Copy failed';
+    feedback.style.position = 'absolute';
+    feedback.style.backgroundColor = 'rgba(200, 0, 0, 0.7)';
+    feedback.style.color = '#fff';
+    feedback.style.padding = '2px 8px';
+    feedback.style.borderRadius = '4px';
+    feedback.style.fontSize = '0.8rem';
+    feedback.style.top = '-25px';
+    feedback.style.left = '50%';
+    feedback.style.transform = 'translateX(-50%)';
+    feedback.style.zIndex = '20'; // Higher z-index to ensure visibility
+    feedback.style.whiteSpace = 'nowrap';
+    
+    element.style.position = 'relative';
+    element.appendChild(feedback);
+    
+    // sets to fade in 800ms
+    setTimeout(() => {
+      if (element.contains(feedback)) {
+        element.removeChild(feedback);
+      }
+      // Remove copying class after the tooltip is gone
+      setTimeout(() => {
+        element.classList.remove('copying');
+      }, 100);
+    }, 800);
+  });
+}
+
+function startTimers() {
+    document.querySelectorAll('.otp-card').forEach(card => {
+      // Clear existing interval if any
+        if (card.dataset.intervalId){
+          clearInterval(card.dataset.intervalId);
+        }
+        startSingleTimer(card);
+    });
+}
+
+function startSingleTimer(card) {
+  const secret = card.dataset.secret;
+  //data-secret
+  const timerElement = card.querySelector('.countdown');
+  //const progressBar = card.querySelector('.progress-bar');
+  let seconds = parseInt(timerElement.textContent);
+
+  const updateTimer = () => {
+      seconds--;
+      timerElement.textContent = `${seconds}s`;
+      //progressBar.style.width = `${(seconds/30)*100}%`;
+
+      if (seconds <= 0) {
+          clearInterval(intervalId);
+          refreshOTP(secret);
+      }
+  };
+
+  const intervalId = setInterval(updateTimer, 1000);
+  
+  // Store interval ID on card element
+  card.dataset.intervalId = intervalId;
+}
+
+function refreshOTP(secret) {
+    fetch(`/otp/get-otp?secret=${encodeURIComponent(secret)}`)
+        .then(response => response.json())
+        .then(otp => {
+                // First try to find the card by data-secret attribute which could be either the full or cleaned secret
+                let card = document.querySelector(`[data-secret="${secret}"]`);
+                
+                // If not found and we have a cleaned_secret, try that too
+                if (!card && otp.cleaned_secret) {
+                    card = document.querySelector(`[data-secret="${otp.cleaned_secret}"]`);
+                }
+                
+                // If not found by cleaned_secret, try the full_secret from the response
+                if (!card && otp.full_secret) {
+                    card = document.querySelector(`[data-secret="${otp.full_secret}"]`);
+                }
+                
+                if (card) {
+                    console.log(`updating otp for secret: ${secret}`);
+                    clearInterval(card.dataset.intervalId);
+                    card.querySelector('.otp-value').textContent = otp.otp;
+                    card.querySelector('.countdown').textContent = `${otp.time_left}s`;
+                    startSingleTimer(card);
+                } else {
+                    console.error(`Could not find card for secret: ${secret}`);
+                }
+            })
+            .catch(error => {
+                console.error('Error refreshing OTP:', error);
+            });
+}
+
+// Load saved OTPs
+function loadSavedOtps() {
+  fetch('/otp/get-saved-otps')
+    .then(response => {
+      if (!response.ok && response.status !== 204) {
+        throw new Error('Error loading saved OTPs');
+      }
+      return response.text();
+    })
+    .then(html => {
+      if (html.trim()) {
+        document.getElementById('saved-otp-list').innerHTML = html;
+        document.getElementById('saved-otps-container').style.display = 'block';
+        startTimers();
+        
+        // Add event listeners for delete buttons
+        document.querySelectorAll('.delete-saved-otp').forEach(btn => {
+          btn.addEventListener('click', function(e) {
+            const otpId = this.dataset.id;
+            deleteSavedOtp(otpId);
+          });
+        });
+        
+        // Ensure copy functionality works for newly loaded content
+        addCopyToClipboardListeners();
+      }
+    })
+    .catch(error => console.error('Error loading saved OTPs:', error));
+}
+
+// Delete saved OTP
+function deleteSavedOtp(otpId) {
+  if (confirm('Are you sure you want to delete this saved OTP?')) {
+    fetch(`/otp/delete-saved-otp/${otpId}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        // Reload saved OTPs
+        loadSavedOtps();
+      } else {
+        alert(data.message || 'Error deleting OTP');
+      }
+    })
+    .catch(error => console.error('Error deleting saved OTP:', error));
+  }
+}
+
+// Save OTP modal handling
+const saveOtpModal = document.getElementById('saveOtpModal');
+const closeModal = document.querySelector('.close');
+
+// Close modal when clicking the × button
+closeModal.onclick = function() {
+  saveOtpModal.style.display = "none";
+}
+
+// Close modal when clicking outside of it
+window.onclick = function(event) {
+  if (event.target == saveOtpModal) {
+    saveOtpModal.style.display = "none";
+  }
+}
+
+// Handle clicking on save button
+document.addEventListener('click', function(e) {
+  if (e.target && e.target.classList.contains('save-otp')) {
+    const secret = e.target.dataset.secret;
+    document.getElementById('secretToSave').value = secret;
+    saveOtpModal.style.display = "block";
+  }
+});
+
+// Handle save form submission
+document.getElementById('saveOtpForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  
+  const secret = document.getElementById('secretToSave').value;
+  const friendlyName = document.getElementById('friendlyName').value;
+  
+  fetch('/otp/save-otp', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      secret: secret,
+      friendly_name: friendlyName
+    })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      // Close modal and reset form
+      saveOtpModal.style.display = "none";
+      document.getElementById('friendlyName').value = '';
+      
+      // Reload saved OTPs
+      loadSavedOtps();
+    } else {
+      alert(data.message || 'Error saving OTP');
+    }
+  })
+  .catch(error => {
+    console.error('Error saving OTP:', error);
+    alert('Error saving OTP');
+  });
+});
+
+// got some help from claude
+// wait for form to be submitted
+$(document).ready(function() {
+$(document).on("submit","#get_otp", function(e){
+    console.log("Submitted.");
+    e.preventDefault();
+    $.ajax({
+        type:"POST",
+        url:"/otp/get-otp",
+        data: JSON.stringify($('#form_secret').val()),
+        dataType:"html",//specify return type
+        contentType:"application/json"
+    }).then(html =>{
+        $('#otp-container').html(html);
+        // Initialize timers when page loads
+        startTimers();
+        // Ensure copy functionality works for newly loaded content
+        addCopyToClipboardListeners();
+    }).fail(error =>{
+      console.error("Error:",error);
+      $('otp-container').html("<p>Error Loading OTPs. </p>");
+    })
+})
+});
+
+document.getElementById('get_otp').addEventListener('submit', function(event) {
+  event.preventDefault();
+  const formData = document.getElementById('form_secret').value.trim();
+  
+  if (formData) {
+    fetch('/otp/get-otp', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(formData)
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Server error');
+      }
+      return response.text();
+    })
+    .then(html => {
+      document.getElementById('otp-container').innerHTML = html;
+      startTimers();
+      addCopyToClipboardListeners();
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      document.getElementById('otp-container').innerHTML = '<div class="alert alert-danger">Error generating OTPs. Please check your input and try again.</div>';
+    });
+  }
+});
+
+</script> 
+{% endblock javascripts %}

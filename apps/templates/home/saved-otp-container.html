@@ -1,0 +1,25 @@
+{% for otp in otps %}
+<div class="otp-card saved-otp" data-secret="{{ otp.full_secret }}" data-id="{{ otp.saved_id }}">
+  <div class="row">
+    <div class="col-md-2">
+      <div class="otp-value">{{ otp.otp }}</div>
+    </div>
+    <div class="col-md-2">
+      <div class="countdown">{{ otp.time_left }}</div>
+    </div>
+    <div class="col-md-3">
+      <div class="friendly-name">{{ otp.friendly_name }}</div>
+    </div>
+    <div class="col-md-4">
+      <div class="secret">
+        {{ otp.full_secret }}
+      </div>
+    </div>
+    <div class="col-md-1">
+      <button class="btn btn-sm btn-danger delete-saved-otp" data-id="{{ otp.saved_id }}">
+        <i class="fas fa-trash"></i>
+      </button>
+    </div>
+  </div>  
+</div>
+{% endfor %} 

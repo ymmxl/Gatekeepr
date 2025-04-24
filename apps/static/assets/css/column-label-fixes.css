@@ -1,0 +1,23 @@
+/* Column label styling improvements for light and dark modes */
+
+/* Light mode styles */
+body:not(.dark-page) .column-labels {
+  background-color: #344767; /* Darker blue for better contrast */
+  color: #ffffff; /* White text for better readability */
+  font-weight: 600;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* Dark mode styles - maintain existing styling but ensure text is visible */
+body.dark-page .column-labels {
+  background-color: #404B69; /* Consistent with dark theme */
+  color: #ffffff !important;
+  font-weight: 600;
+  display: flex;
+  padding: 8px 15px;
+  border-radius: 5px;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  background-color: rgb(98, 107, 134);
+} 
